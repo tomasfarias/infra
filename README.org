@@ -1,0 +1,3 @@
+* Infra - or my personal infrastructure
+
+This includes deployment scripts, infrastructure as code, and other random bits of stuff I have used to deploy things.
