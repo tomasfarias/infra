@@ -1,0 +1,12 @@
+services:
+  blog:
+    image: tomasfarias/hugo-blog:${BLOG_IMAGE_VERSION:-latest}
+    container_name: blog
+    networks:
+      - proxy
+    environment:
+      VIRTUAL_HOST: ${BLOG_HOST}
+      VIRTUAL_PORT: ${BLOG_PORT:-8080}
+      LETSENCRYPT_HOST: ${BLOG_HOST}
+      LETSENCRYPT_EMAIL: ${EMAIL}
+    command: caddy file-server --root public -a --listen blog:${BLOG_PORT:-8080}
