@@ -13,11 +13,36 @@ services:
       - "${IPv4:-0.0.0.0}:${DOCKER_HTTP_:-80}:80"
       - "${IPv4:-0.0.0.0}:${DOCKER_HTTPS:-443}:443"
     volumes:
-      - nginx-data/conf.d:/etc/nginx/conf.d
-      - nginx-data/vhost.d:/etc/nginx/vhost.d
-      - nginx-data/html:/usr/share/nginx/html
-      - nginx-data/certs:/etc/nginx/certs:ro
-      - nginx-data/htpasswd:/etc/nginx/htpasswd:ro
+      - type: volume
+        source: nginx-data
+        target: /etc/nginx/conf.d
+        volume:
+          nocopy: true
+          subpath: conf.d
+      - type: volume
+        source: nginx-data
+        target: /etc/nginx/vhost.d
+        volume:
+          nocopy: true
+          subpath: vhost.d
+      - type: volume
+        source: nginx-data
+        target: /usr/share/nginx/html
+        volume:
+          nocopy: true
+          subpath: html
+      - type: volume
+        source: nginx-data
+        target: /etc/nginx/certs:ro
+        volume:
+          nocopy: true
+          subpath: certs
+      - type: volume
+        source: nginx-data
+        target: /etc/nginx/htpasswd:ro
+        volume:
+          nocopy: true
+          subpath: htpasswd
     logging:
       options:
         max-size: "10m"
@@ -31,13 +56,43 @@ services:
       - proxy-internal
     restart: unless-stopped
     volumes:
-      - nginx-data/conf.d:/etc/nginx/conf.d
-      - nginx-data/vhost.d:/etc/nginx/vhost.d
-      - nginx-data/html:/usr/share/nginx/html
-      - nginx-data/certs:/etc/nginx/certs:ro
-      - nginx-data/htpasswd:/etc/nginx/htpasswd:ro
+      - type: volume
+        source: nginx-data
+        target: /etc/nginx/conf.d
+        volume:
+          nocopy: true
+          subpath: conf.d
+      - type: volume
+        source: nginx-data
+        target: /etc/nginx/vhost.d
+        volume:
+          nocopy: true
+          subpath: vhost.d
+      - type: volume
+        source: nginx-data
+        target: /usr/share/nginx/html
+        volume:
+          nocopy: true
+          subpath: html
+      - type: volume
+        source: nginx-data
+        target: /etc/nginx/certs:ro
+        volume:
+          nocopy: true
+          subpath: certs
+      - type: volume
+        source: nginx-data
+        target: /etc/nginx/htpasswd:ro
+        volume:
+          nocopy: true
+          subpath: htpasswd
+      - type: volume
+        source: nginx-data
+        target: /etc/docker-gen/templates/nginx.tmpl:ro
+        volume:
+          nocopy: true
+          subpath: nginx.tmpl
       - ${DOCKER_HOST_ROOTLESS_PATH:-/var/run/docker.sock}:/tmp/docker.sock:ro
-      - nginx-data/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro
     logging:
       options:
         max-size: "10m"
@@ -54,11 +109,36 @@ services:
       NGINX_PROXY_CONTAINER: nginx-proxy
       DEFAULT_EMAIL: ${EMAIL:?email required}
     volumes:
-      - nginx-data/conf.d:/etc/nginx/conf.d
-      - nginx-data/vhost.d:/etc/nginx/vhost.d
-      - nginx-data/html:/usr/share/nginx/html
-      - nginx-data/certs:/etc/nginx/certs:rw
-      - nginx-data/acme.sh:/etc/acme.sh
+      - type: volume
+        source: nginx-data
+        target: /etc/nginx/conf.d
+        volume:
+          nocopy: true
+          subpath: conf.d
+      - type: volume
+        source: nginx-data
+        target: /etc/nginx/vhost.d
+        volume:
+          nocopy: true
+          subpath: vhost.d
+      - type: volume
+        source: nginx-data
+        target: /usr/share/nginx/html
+        volume:
+          nocopy: true
+          subpath: html
+      - type: volume
+        source: nginx-data
+        target: /etc/nginx/certs:rw
+        volume:
+          nocopy: true
+          subpath: certs
+      - type: volume
+        source: nginx-data
+        target: /etc/acme.sh
+        volume:
+          nocopy: true
+          subpath: acme.sh
       - ${DOCKER_HOST_ROOTLESS_PATH:-/var/run/docker.sock}:/var/run/docker.sock:ro
     logging:
       options:
