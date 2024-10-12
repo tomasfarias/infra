@@ -10,3 +10,7 @@ services:
       LETSENCRYPT_HOST: ${BLOG_HOST}
       LETSENCRYPT_EMAIL: ${EMAIL:?email required}
     command: caddy file-server --root public -a --listen blog:${BLOG_PORT:-8080}
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"

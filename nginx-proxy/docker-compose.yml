@@ -18,6 +18,10 @@ services:
       - nginx-data/html:/usr/share/nginx/html
       - nginx-data/certs:/etc/nginx/certs:ro
       - nginx-data/htpasswd:/etc/nginx/htpasswd:ro
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   docker-gen:
     image: nginxproxy/docker-gen:${DOCKER_GEN_IMAGE_VERSION:-latest}
@@ -34,6 +38,10 @@ services:
       - nginx-data/htpasswd:/etc/nginx/htpasswd:ro
       - ${DOCKER_HOST_ROOTLESS_PATH:-/var/run/docker.sock}:/tmp/docker.sock:ro
       - nginx-data/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl:ro
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   acme-companion:
     image: nginxproxy/acme-companion:${NGINX_PROXY_COMPANION_IMAGE_VERSION:-latest}
@@ -52,6 +60,10 @@ services:
       - nginx-data/certs:/etc/nginx/certs:rw
       - nginx-data/acme.sh:/etc/acme.sh
       - ${DOCKER_HOST_ROOTLESS_PATH:-/var/run/docker.sock}:/var/run/docker.sock:ro
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   external:
