@@ -147,7 +147,7 @@ services:
 
 networks:
   external:
-    external: true
+    internal: false
     name: external
 
   proxy-internal:
