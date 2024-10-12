@@ -1,0 +1,33 @@
+services:
+  syncthing:
+    image: syncthing/syncthing:${SYNCTHING_IMAGE_VERSION:-latest}
+    container_name: syncthing
+    hostname: ${SYNCTHING_HOST}
+    networks:
+      - proxy-apps
+    environment:
+      PUID: 1000
+      PGID: 1000
+      VIRTUAL_HOST: ${SYNCTHING_HOST:?syncthing host required}
+      VIRTUAL_PORT: ${SYNCTHING_PORT:-8384}
+      LETSENCRYPT_HOST: ${SYNCTHING_HOST}
+      LETSENCRYPT_EMAIL: ${EMAIL:?email required}
+    volumes:
+      - syncthing-data:/var/syncthing
+    ports:
+      - 22000:22000/tcp # TCP file transfers
+      - 22000:22000/udp # QUIC file transfers
+    restart: unless-stopped
+    healthcheck:
+      test: curl -fkLsS -m 2 127.0.0.1:8384/rest/noauth/health | grep -o --color=never OK || exit 1
+      interval: 1m
+      timeout: 10s
+      retries: 3
+
+volumes:
+  syncthing-data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/var/local/syncthing/data'
