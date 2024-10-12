@@ -13,36 +13,11 @@ services:
       - "${IPv4:-0.0.0.0}:${DOCKER_HTTP_:-80}:80"
       - "${IPv4:-0.0.0.0}:${DOCKER_HTTPS:-443}:443"
     volumes:
-      - type: volume
-        source: nginx-data
-        target: /etc/nginx/conf.d
-        volume:
-          nocopy: true
-          subpath: conf.d
-      - type: volume
-        source: nginx-data
-        target: /etc/nginx/vhost.d
-        volume:
-          nocopy: true
-          subpath: vhost.d
-      - type: volume
-        source: nginx-data
-        target: /usr/share/nginx/html
-        volume:
-          nocopy: true
-          subpath: html
-      - type: volume
-        source: nginx-data
-        target: /etc/nginx/certs:ro
-        volume:
-          nocopy: true
-          subpath: certs
-      - type: volume
-        source: nginx-data
-        target: /etc/nginx/htpasswd:ro
-        volume:
-          nocopy: true
-          subpath: htpasswd
+      - proxy-conf-dir:/etc/nginx/conf.d
+      - proxy-vhost-dir:/etc/nginx/vhost.d
+      - proxy-certs:/etc/nginx/certs:ro
+      - proxy-htpasswd:/etc/nginx/htpasswd:ro
+      - proxy-html:/usr/share/nginx/html
     logging:
       options:
         max-size: "10m"
@@ -56,42 +31,12 @@ services:
       - proxy-internal
     restart: unless-stopped
     volumes:
-      - type: volume
-        source: nginx-data
-        target: /etc/nginx/conf.d
-        volume:
-          nocopy: true
-          subpath: conf.d
-      - type: volume
-        source: nginx-data
-        target: /etc/nginx/vhost.d
-        volume:
-          nocopy: true
-          subpath: vhost.d
-      - type: volume
-        source: nginx-data
-        target: /usr/share/nginx/html
-        volume:
-          nocopy: true
-          subpath: html
-      - type: volume
-        source: nginx-data
-        target: /etc/nginx/certs:ro
-        volume:
-          nocopy: true
-          subpath: certs
-      - type: volume
-        source: nginx-data
-        target: /etc/nginx/htpasswd:ro
-        volume:
-          nocopy: true
-          subpath: htpasswd
-      - type: volume
-        source: nginx-data
-        target: /etc/docker-gen/templates/nginx.tmpl:ro
-        volume:
-          nocopy: true
-          subpath: nginx.tmpl
+      - proxy-conf-dir:/etc/nginx/conf.d
+      - proxy-vhost-dir:/etc/nginx/vhost.d
+      - proxy-certs:/etc/nginx/certs:ro
+      - proxy-html:/usr/share/nginx/html
+      - proxy-htpasswd:/etc/nginx/htpasswd:ro
+      - ${NGINX_PROXY_VOLUME:-/var/local/nginx-proxy}/nginx.tmpl:/etc/docker-gen/templates/nginx.tmpl
       - ${DOCKER_HOST_ROOTLESS_PATH:-/var/run/docker.sock}:/tmp/docker.sock:ro
     logging:
       options:
@@ -103,42 +48,19 @@ services:
     container_name: acme-companion
     restart: unless-stopped
     networks:
+      - external
       - proxy-internal
     environment:
       NGINX_DOCKER_GEN_CONTAINER: docker-gen
       NGINX_PROXY_CONTAINER: nginx-proxy
       DEFAULT_EMAIL: ${EMAIL:?email required}
     volumes:
-      - type: volume
-        source: nginx-data
-        target: /etc/nginx/conf.d
-        volume:
-          nocopy: true
-          subpath: conf.d
-      - type: volume
-        source: nginx-data
-        target: /etc/nginx/vhost.d
-        volume:
-          nocopy: true
-          subpath: vhost.d
-      - type: volume
-        source: nginx-data
-        target: /usr/share/nginx/html
-        volume:
-          nocopy: true
-          subpath: html
-      - type: volume
-        source: nginx-data
-        target: /etc/nginx/certs:rw
-        volume:
-          nocopy: true
-          subpath: certs
-      - type: volume
-        source: nginx-data
-        target: /etc/acme.sh
-        volume:
-          nocopy: true
-          subpath: acme.sh
+      - proxy-conf-dir:/etc/nginx/conf.d
+      - proxy-vhost-dir:/etc/nginx/vhost.d
+      - proxy-certs:/etc/nginx/certs:rw
+      - proxy-htpasswd:/etc/nginx/htpasswd:ro
+      - proxy-html:/usr/share/nginx/html
+      - proxy-acme-sh:/etc/acme.sh
       - ${DOCKER_HOST_ROOTLESS_PATH:-/var/run/docker.sock}:/var/run/docker.sock:ro
     logging:
       options:
@@ -161,9 +83,39 @@ networks:
     name: proxy-apps
 
 volumes:
-  nginx-data:
+  proxy-vhost-dir:
     driver: local
     driver_opts:
       type: 'none'
       o: 'bind'
-      device: '/var/local/nginx-proxy/data'
+      device: '${NGINX_PROXY_VOLUME:-/var/local/nginx-proxy}/vhost.d'
+  proxy-certs:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${NGINX_PROXY_VOLUME:-/var/local/nginx-proxy}/certs'
+  proxy-conf-dir:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${NGINX_PROXY_VOLUME:-/var/local/nginx-proxy}/conf.d'
+  proxy-htpasswd:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${NGINX_PROXY_VOLUME:-/var/local/nginx-proxy}/htpasswd'
+  proxy-html:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${NGINX_PROXY_VOLUME:-/var/local/nginx-proxy}/html'
+  proxy-acme-sh:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${NGINX_PROXY_VOLUME:-/var/local/nginx-proxy}/acme.sh'
