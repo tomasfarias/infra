@@ -7,7 +7,7 @@ services:
     environment:
       VIRTUAL_HOST: ${BLOG_HOST:?blog host required}
       VIRTUAL_PORT: ${BLOG_PORT:-8080}
-      LETSENCRYPT_HOST: ${BLOG_HOST}
+      LETSENCRYPT_HOST: ${BLOG_HOST:?blog host required}
       LETSENCRYPT_EMAIL: ${EMAIL:?email required}
     command: caddy file-server --root public -a --listen blog:${BLOG_PORT:-8080}
     logging:
