@@ -1,0 +1,23 @@
+services:
+  redis:
+    image: docker.io/redis:${REDIS_IMAGE_VERSION:-alpine}
+    container_name: redis
+    restart: unless-stopped
+    networks:
+      - redis-internal
+    volumes:
+      - ${REDIS_VOLUME:-/var/local/redis}:/data
+
+networks:
+  redis-internal:
+    internal: true
+    driver: bridge
+    name: redis-internal
+
+volumes:
+  redis-volume:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${REDIS_VOLUME:-/var/local/redis}'

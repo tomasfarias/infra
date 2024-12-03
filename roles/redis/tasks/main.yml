@@ -1,0 +1,8 @@
+- name: Create and start redis
+  become: true
+  community.docker.docker_compose_v2:
+    project_src: /infra
+    files:
+      - redis/docker-compose.yml
+    wait: true
+  register: output
