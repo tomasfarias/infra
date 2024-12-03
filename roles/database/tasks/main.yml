@@ -1,0 +1,31 @@
+- name: Make volume directory for PgBouncer
+  become: true
+  ansible.builtin.file:
+    path: "{{ pgbouncer_volume }}"
+    state: directory
+- name: Make volume directory for PostgreSQL
+  become: true
+  ansible.builtin.file:
+    path: "{{ postgresql_volume }}"
+    state: directory
+- name: Copy init scripts directory for PgBouncer
+  become: true
+  copy:
+    src: database/pgbouncer/docker-entrypoint-initdb.d/
+    dest: "{{ pgbouncer_volume }}/docker-entrypoint-initdb.d/"
+    remote_src: no
+- name: Copy init scripts directory for PostgreSQL
+  become: true
+  copy:
+    src: database/postgresql/docker-entrypoint-initdb.d/
+    dest: "{{ postgresql_volume }}/docker-entrypoint-initdb.d/"
+    remote_src: no
+- name: Create and start database
+  become: true
+  community.docker.docker_compose_v2:
+    project_src: /infra
+    files:
+      - nginx_proxy/docker-compose.yml
+      - database/docker-compose.yml
+    wait: true
+  register: output

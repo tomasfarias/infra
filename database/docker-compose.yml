@@ -1,0 +1,64 @@
+services:
+  pgbouncer:
+    image: docker.io/bitnami/pgbouncer:${PGBOUNCER_IMAGE_VERSION:-latest}
+    container_name: pgbouncer
+    restart: unless-stopped
+    ports:
+      - '${POSTGRESQL_EXTERNAL_PORT:?pgbouncer external port is required}:6432'
+    environment:
+      POSTGRESQL_USERNAME: ${PGBOUNCER_POSTGRESQL_USERNAME:?pgbouncer username required}
+      POSTGRESQL_PASSWORD: ${PGBOUNCER_POSTGRESQL_PASSWORD:?pgbouncer password required}
+    networks:
+      - external
+      - database-internal
+      - proxy-apps
+    volumes:
+      - pgbouncer-volume:/bitnami/pgbouncer
+      - ${PGBOUNCER_VOLUME:-/var/local/pgbouncer}/conf/pgbouncer.ini:/bitnami/pgbouncer/conf/pgbouncer.ini
+      - ${PGBOUNCER_VOLUME:-/var/local/pgbouncer}/conf/pg_hba.conf:/bitnami/pgbouncer/conf/pg_hba.conf
+      - ${PGBOUNCER_VOLUME:-/var/local/pgbouncer}/docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  postgresql:
+    image: docker.io/bitnami/postgresql:${POSTGRESQL_IMAGE_VERSION:-16}
+    container_name: postgresql
+    restart: unless-stopped
+    environment:
+      POSTGRESQL_USERNAME: ${POSTGRESQL_USERNAME:?postgresql username required}
+      POSTGRESQL_PASSWORD: ${POSTGRESQL_PASSWORD:?postgresql password required}
+    ports:
+      - '5432'
+    networks:
+      - database-internal
+    volumes:
+      - postgresql-volume:/bitnami/postgresql
+      - ${PGBOUNCER_VOLUME:-/var/local/postgresql}/conf/:/bitnami/postgresql/conf
+      - ${PGBOUNCER_VOLUME:-/var/local/postgresql}/docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  database-internal:
+    internal: true
+    driver: bridge
+    name: database-internal
+
+volumes:
+  postgresql-volume:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${POSTGRESQL_VOLUME:-/var/local/postgresql}'
+
+  pgbouncer-volume:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${PGBOUNCER_VOLUME:-/var/local/pgbouncer}'
