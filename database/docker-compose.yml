@@ -30,6 +30,8 @@ services:
     environment:
       POSTGRESQL_USERNAME: ${POSTGRESQL_USERNAME:?postgresql username required}
       POSTGRESQL_PASSWORD: ${POSTGRESQL_PASSWORD:?postgresql password required}
+      PGUSER: ${POSTGRESQL_USERNAME:?postgresql username required}
+      PGPASSWORD: ${POSTGRESQL_PASSWORD:?postgresql password required}
     ports:
       - '5432'
     networks:
