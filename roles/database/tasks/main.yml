@@ -3,23 +3,109 @@
   ansible.builtin.file:
     path: "{{ pgbouncer_volume }}"
     state: directory
+    group: "root"
+    owner: 1001
+    mode: "u=rwx,g=rwx,o="
+    recurse: true
+
 - name: Make volume directory for PostgreSQL
   become: true
   ansible.builtin.file:
     path: "{{ postgresql_volume }}"
     state: directory
+    group: "root"
+    owner: 1001
+    mode: "u=rwx,g=rwx,o="
+    recurse: true
+
 - name: Copy init scripts directory for PgBouncer
   become: true
   copy:
     src: database/pgbouncer/docker-entrypoint-initdb.d/
     dest: "{{ pgbouncer_volume }}/docker-entrypoint-initdb.d/"
     remote_src: no
+    group: "root"
+    owner: 1001
+    directory_mode: "u=rwx,g=rwx,o="
+    mode: "u=rwx,g=rwx,o="
+
 - name: Copy init scripts directory for PostgreSQL
   become: true
   copy:
     src: database/postgresql/docker-entrypoint-initdb.d/
     dest: "{{ postgresql_volume }}/docker-entrypoint-initdb.d/"
     remote_src: no
+    group: "root"
+    owner: 1001
+    directory_mode: "u=rwx,g=rwx,o="
+    mode: "u=rwx,g=rwx,o="
+
+- name: Copy conf directory for PgBouncer
+  become: true
+  copy:
+    src: database/pgbouncer/conf/
+    dest: "{{ pgbouncer_volume }}/conf/"
+    remote_src: no
+    group: "root"
+    owner: 1001
+    directory_mode: "u=rwx,g=rwx,o="
+    mode: "u=rwx,g=rwx,o="
+
+- name: Copy conf directory for PostgreSQL
+  become: true
+  copy:
+    src: database/postgresql/conf/
+    dest: "{{ postgresql_volume }}/conf/"
+    remote_src: no
+    group: "root"
+    owner: 1001
+    directory_mode: "u=rwx,g=rwx,o="
+    mode: "u=rwx,g=rwx,o="
+
+- name: Create directory for PostgreSQL extensions
+  become: true
+  ansible.builtin.file:
+    path: "{{ postgresql_volume }}/extensions"
+    state: directory
+    group: "root"
+    owner: 1001
+    mode: "u=rwx,g=rwx,o="
+    recurse: true
+
+- name: Check if pgvector extension directory exists
+  become: true
+  stat:
+    path: "{{ postgresql_volume }}/extensions/pgvector"
+  register: pgvector_directory
+
+- name: Git checkout pgvector extension
+  become: true
+  ansible.builtin.git:
+    repo: 'https://github.com/pgvector/pgvector.git'
+    dest: "{{ postgresql_volume }}/extensions/pgvector"
+    version: "v0.8.0"
+  when: p.stat.isdir is defined and p.stat.isdir
+  register: pgvector_clone
+
+- name: Update pgvector directory permissions
+  become: true
+  ansible.builtin.file:
+    path: "{{ postgresql_volume }}/extensions/pgvector"
+    state: directory
+    group: "root"
+    owner: 1001
+    mode: "u=rwx,g=rwx,o="
+    recurse: true
+  when: pgvector_clone is succeeded
+
+- name: Configure pgvector extension directory
+  become: true
+  shell: "git config --global --add safe.directory {{ postgresql_volume }}/extensions/pgvector"
+  register: output
+  args:
+    executable: /bin/bash
+  when: pgvector_clone is succeeded
+
 - name: Create and start database
   become: true
   community.docker.docker_compose_v2:

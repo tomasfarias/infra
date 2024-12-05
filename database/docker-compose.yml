@@ -16,6 +16,7 @@ services:
       - pgbouncer-volume:/bitnami/pgbouncer
       - ${PGBOUNCER_VOLUME:-/var/local/pgbouncer}/conf/pgbouncer.ini:/bitnami/pgbouncer/conf/pgbouncer.ini
       - ${PGBOUNCER_VOLUME:-/var/local/pgbouncer}/conf/pg_hba.conf:/bitnami/pgbouncer/conf/pg_hba.conf
+      - ${PGBOUNCER_VOLUME:-/var/local/pgbouncer}/conf/userlist.txt:/bitnami/pgbouncer/conf/userlist.txt
       - ${PGBOUNCER_VOLUME:-/var/local/pgbouncer}/docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d
     logging:
       options:
@@ -35,8 +36,9 @@ services:
       - database-internal
     volumes:
       - postgresql-volume:/bitnami/postgresql
-      - ${PGBOUNCER_VOLUME:-/var/local/postgresql}/conf/:/bitnami/postgresql/conf
-      - ${PGBOUNCER_VOLUME:-/var/local/postgresql}/docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d
+      - ${POSTGRESQL_VOLUME:-/var/local/postgresql}/conf/postgresql.conf:/bitnami/postgresql/conf/postgresql.conf
+      - ${POSTGRESQL_VOLUME:-/var/local/postgresql}/conf/pg_hba.conf:/bitnami/postgresql/conf/pg_hba.conf
+      - ${POSTGRESQL_VOLUME:-/var/local/postgresql}/docker-entrypoint-initdb.d/:/docker-entrypoint-initdb.d
     logging:
       options:
         max-size: "10m"
@@ -49,16 +51,16 @@ networks:
     name: database-internal
 
 volumes:
-  postgresql-volume:
-    driver: local
-    driver_opts:
-      type: 'none'
-      o: 'bind'
-      device: '${POSTGRESQL_VOLUME:-/var/local/postgresql}'
-
   pgbouncer-volume:
     driver: local
     driver_opts:
       type: 'none'
       o: 'bind'
       device: '${PGBOUNCER_VOLUME:-/var/local/pgbouncer}'
+
+  postgresql-volume:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${POSTGRESQL_VOLUME:-/var/local/postgresql}'
