@@ -1,0 +1,99 @@
+services:
+  authentik-server:
+    image: ghcr.io/goauthentik/server:${AUTHENTIK_IMAGE_VERSION:-latest}
+    container_name: authentik-server
+    restart: unless-stopped
+    command: server
+    user: "1000:1000"
+    expose:
+      - "9000"
+      - "9300"
+      - "9443"
+    networks:
+      - proxy-apps
+      - database-internal
+      - authentik-internal
+      - redis-internal
+    depends_on:
+      - pgbouncer
+      - redis
+    environment:
+      VIRTUAL_HOST: ${AUTHENTIK_HOST:?authentik host required}
+      VIRTUAL_PORT: ${AUTHENTIK_PORT:-9000}
+      LETSENCRYPT_HOST: ${AUTHENTIK_HOST:?authentik host required}
+      LETSENCRYPT_EMAIL: ${EMAIL:?email required}
+      TZ: ${TIMEZONE:-Europe/Berlin}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?authentik secret key required}
+      AUTHENTIK_REDIS__HOST: ${AUTHENTIK_REDIS_HOST:?authentik redis host required}
+      AUTHENTIK_POSTGRESQL__HOST: ${AUTHENTIK_POSTGRESQL_HOST:?authentik postgresql host required}
+      AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_POSTGRESQL_DBNAME:?authentik postgresql dbname required}
+      AUTHENTIK_POSTGRESQL__USER: ${AUTHENTIK_POSTGRESQL_USERNAME:?authentik postgresql username required}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_POSTGRESQL_PASSWORD:?authentik postgresql password required}
+      AUTHENTIK_POSTGRESQL__PORT: ${AUTHENTIK_POSTGRESQL_PORT:?authentik postgresql port required}
+      AUTHENTIK_POSTGRESQL__USE_PGBOUNCER: ${AUTHENTIK_POSTGRESQL_USE_PGBOUNCER:-true}
+      AUTHENTIK_POSTGRESQL__SSLMODE: ${AUTHENTIK_POSTGRESQL_SSLMODE:-prefer}
+      AUTHENTIK_DISABLE_UPDATE_CHECK: true
+      AUTHENTIK_ERROR_REPORTING__ENABLED: false
+      AUTHENTIK_DISABLE_STARTUP_ANALYTICS: true
+      AUTHENTIK_AVATARS: initials
+    volumes:
+      - ${AUTHENTIK_VOLUME:-/var/local/authentik}/media:/media
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:${AUTHENTIK_IMAGE_VERSION:-latest}
+    container_name: authentik-worker
+    restart: unless-stopped
+    command: worker
+    user: "1000:1000"
+    networks:
+      - database-internal
+      - authentik-internal
+      - redis-internal
+    depends_on:
+      - pgbouncer
+      - redis
+      - authentik-server
+    environment:
+      TZ: ${TIMEZONE:-Europe/Berlin}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?authentik secret key required}
+      AUTHENTIK_REDIS__HOST: ${AUTHENTIK_REDIS_HOST:?authentik redis host required}
+      AUTHENTIK_POSTGRESQL__HOST: ${AUTHENTIK_POSTGRESQL_HOST:?authentik postgresql host required}
+      AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_POSTGRESQL_DBNAME:?authentik postgresql dbname required}
+      AUTHENTIK_POSTGRESQL__USER: ${AUTHENTIK_POSTGRESQL_USERNAME:?authentik postgresql username required}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_POSTGRESQL_PASSWORD:?authentik postgresql password required}
+      AUTHENTIK_POSTGRESQL__PORT: ${AUTHENTIK_POSTGRESQL_PORT:?authentik postgresql port required}
+      AUTHENTIK_POSTGRESQL__USE_PGBOUNCER: ${AUTHENTIK_POSTGRESQL_USE_PGBOUNCER:-true}
+      AUTHENTIK_POSTGRESQL__SSLMODE: ${AUTHENTIK_POSTGRESQL_SSLMODE:-prefer}
+      AUTHENTIK_DISABLE_UPDATE_CHECK: true
+      AUTHENTIK_ERROR_REPORTING__ENABLED: false
+      AUTHENTIK_DISABLE_STARTUP_ANALYTICS: true
+      AUTHENTIK_AVATARS: initials
+      AUTHENTIK_WORKER__CONCURRENCY: ${AUTHENTIK_WORKER_CONCURRENCY:-1}
+    volumes:
+      - ${AUTHENTIK_VOLUME:-/var/local/authentik}/media:/media
+    ulimits:
+      nofile:
+        soft: 10240
+        hard: 10240
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  authentik-internal:
+    internal: true
+    driver: bridge
+    name: authentik-internal
+
+volumes:
+  authentik-volume:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '${AUTHENTIK_VOLUME:-/var/local/authentik}'
